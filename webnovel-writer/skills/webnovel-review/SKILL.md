@@ -10,7 +10,7 @@ allowed-tools: Read Grep Write Edit Bash Agent AskUserQuestion
 
 - 解析真实书项目根目录，按统一流程完成章节审查。
 - 调用统一 `reviewer` 生成结构化问题列表与审查报告。
-- 把审查指标写入 `index.db`，并把审查记录写回 `state.json`。
+- 把审查指标写入 `index.db`，并把审查记录写入 `.webnovel/state.json` 兼容投影，主链事实仍以 review contract 与 accepted `CHAPTER_COMMIT` 为准。
 - 审查时优先依据 `.story-system/reviews/chapter_{NNN}.review.json` 与 latest accepted `CHAPTER_COMMIT` 判断主链事实。
 - 若存在关键问题，明确交给用户决定是否立即返工。
 
@@ -79,7 +79,7 @@ python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${WORKSPACE_ROOT}" \
 | ai_flavor issue ≥ 3 | `../../skills/webnovel-write/references/anti-ai-guide.md` |
 | blocking issue 需用户决策 (Step 6) | `../../references/review/blocking-override-guidelines.md` |
 
-### Step 3：加载项目状态与待审正文
+### Step 3：加载项目投影状态与待审正文
 
 ```bash
 cat "${PROJECT_ROOT}/.webnovel/state.json"
@@ -87,7 +87,7 @@ cat "${PROJECT_ROOT}/.webnovel/state.json"
 
 要求：
 - 明确当前章节号与对应正文文件
-- 若缺少正文或状态文件，立即阻断
+- 若缺少正文或兼容状态文件，立即阻断
 
 ### Step 4：调用统一审查 Agent
 
@@ -142,9 +142,9 @@ python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" ind
 - `review-pipeline` 生成的 `review_metrics.json` 必须可直接写入 `review_metrics` 表
 - 阻断判断以 reviewer 原始结果中的 `blocking=true` 为准
 
-### Step 6：写回审查记录并处理阻断
+### Step 6：写入兼容审查记录并处理阻断
 
-先写回审查记录：
+先写入兼容审查记录（read-model/projection，不是写后事实真源）：
 
 ```bash
 python "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" update-state -- --add-review "{chapter_num}-{chapter_num}" "审查报告/第{chapter_num}章审查报告.md"
@@ -167,5 +167,5 @@ python "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" update-stat
 2. 已通过 `reviewer` 输出结构化问题 JSON。
 3. 审查报告已生成。
 4. `review_metrics` 已写入 `index.db`。
-5. 审查记录已写回 `state.json`。
+5. 审查记录已写入 `.webnovel/state.json` 兼容投影。
 6. 如存在阻断问题，用户已明确选择处理策略。

@@ -74,7 +74,7 @@ python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "{project_root}" extr
 
 1. `load-context --chapter {NNNN}` 获取基础包
 2. `Read` 章纲原文（load-context 的 outline 可能截断）
-3. 确定卷号（优先 state.json）
+3. 确定卷号（优先 runtime contracts / latest commit；必要时兼容读取 state.json 投影）
 
 ### B：按需深查（只查基础包不足的）
 

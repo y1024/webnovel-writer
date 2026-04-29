@@ -5,7 +5,6 @@ Tests for reference_search.py — BM25 keyword search over CSV reference files.
 """
 
 import json
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -166,11 +165,9 @@ class TestSkillAndGenreFiltering:
         ids = [r["编号"] for r in out["data"]["results"]]
         assert "GR-025" in ids
 
-    def test_legacy_comma_delimiters_remain_compatible(self):
+    def test_legacy_comma_delimiters_remain_compatible(self, tmp_path):
         """迁移过渡期仍兼容旧的逗号分隔技能与题材字段。"""
-        temp_dir = Path.home() / ".codex" / "memories" / "reference_search_compat"
-        if temp_dir.exists():
-            shutil.rmtree(temp_dir)
+        temp_dir = tmp_path / "reference_search_compat"
         temp_dir.mkdir(parents=True, exist_ok=True)
         csv_path = temp_dir / "兼容测试.csv"
         csv_path.write_text(

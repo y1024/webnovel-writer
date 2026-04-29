@@ -5,7 +5,7 @@
 
 目标：
 - 生成可运行的项目结构（webnovel-project）
-- 创建/更新 .webnovel/state.json（运行时真相）
+- 创建/更新 .webnovel/state.json（初始化配置与兼容读模型）
 - 生成基础设定集与大纲模板文件（供 /webnovel-plan 与 /webnovel-write 使用）
 
 说明：

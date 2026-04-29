@@ -56,7 +56,7 @@ export PROJECT_ROOT="$(python "${SCRIPTS_DIR}/webnovel.py" --project-root "${WOR
 若本次规划会直接落到具体章节，还必须先刷新 Story System runtime 合同：
 
 ```bash
-# genre 从 state.json 读取（唯一真源）
+# genre 从 state.json 的初始化配置快照读取；写前主链真源是 .story-system 合同树
 GENRE="$(python -X utf8 -c "import json,sys; s=json.load(open('${PROJECT_ROOT}/.webnovel/state.json',encoding='utf-8')); print(s.get('project',{}).get('genre',''))")"
 
 python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${WORKSPACE_ROOT}" \
@@ -102,13 +102,13 @@ python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${WORKSPACE_ROOT}" \
 **必须加载**：
 
 ```bash
-# 项目状态与题材
+# 项目配置/投影状态（兼容读取，不作为写后事实真源）
 cat "$PROJECT_ROOT/.webnovel/state.json"
 
 # 总纲（全局蓝图）
 cat "$PROJECT_ROOT/大纲/总纲.md"
 
-# 题材（唯一真源，后续 CSV 检索和裁决匹配依赖此值）
+# 题材（来自 init 配置快照，后续 CSV 检索和裁决匹配依赖此值）
 GENRE="$(python -X utf8 -c "import json; s=json.load(open('${PROJECT_ROOT}/.webnovel/state.json',encoding='utf-8')); print(s.get('project',{}).get('genre',''))")"
 ```
 

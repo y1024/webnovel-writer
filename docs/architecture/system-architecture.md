@@ -405,7 +405,7 @@ graph TB
 ```mermaid
 graph LR
     INIT_USER["用户选择题材（如'修仙'）"]
-    STATE_GENRE["state.json<br/>project.genre='修仙'<br/>（唯一真源）"]
+    STATE_GENRE["state.json<br/>project.genre='修仙'<br/>（init 配置快照 / read-model）"]
     
     STORY_CLI["story-system CLI<br/>--genre '修仙'"]
     

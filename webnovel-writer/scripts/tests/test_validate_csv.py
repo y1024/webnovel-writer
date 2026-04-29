@@ -6,6 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 import csv
+import tempfile
 import uuid
 
 
@@ -14,11 +15,7 @@ CSV_DIR = str(Path(__file__).resolve().parents[2] / "references" / "csv")
 
 
 def _make_local_tmp_path() -> Path:
-    base_dir = Path.home() / ".codex" / "memories" / "validate_csv_cases"
-    base_dir.mkdir(parents=True, exist_ok=True)
-    tmp_dir = base_dir / f"case_{uuid.uuid4().hex}"
-    tmp_dir.mkdir()
-    return tmp_dir
+    return Path(tempfile.mkdtemp(prefix=f"validate_csv_cases_{uuid.uuid4().hex}_"))
 
 
 def run_validate(*args: str) -> subprocess.CompletedProcess:

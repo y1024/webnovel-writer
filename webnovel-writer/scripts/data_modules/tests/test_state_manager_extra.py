@@ -561,6 +561,11 @@ def test_state_manager_cli_commands(temp_project, monkeypatch, capsys):
 
 
 def test_state_manager_cli_rejects_invalid_project_root(monkeypatch, tmp_path, capsys):
+    monkeypatch.delenv("WEBNOVEL_PROJECT_ROOT", raising=False)
+    monkeypatch.delenv("CLAUDE_PROJECT_DIR", raising=False)
+    monkeypatch.setenv("WEBNOVEL_CLAUDE_HOME", str(tmp_path / "empty-claude-home"))
+
+    (tmp_path / ".git").mkdir(parents=True, exist_ok=True)
     invalid_root = tmp_path / "not-a-project"
     invalid_root.mkdir(parents=True, exist_ok=True)
 

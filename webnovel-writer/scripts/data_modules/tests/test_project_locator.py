@@ -4,6 +4,8 @@
 import sys
 from pathlib import Path
 
+import pytest
+
 
 def _ensure_scripts_on_path() -> None:
     scripts_dir = Path(__file__).resolve().parents[2]
@@ -11,11 +13,19 @@ def _ensure_scripts_on_path() -> None:
         sys.path.insert(0, str(scripts_dir))
 
 
+@pytest.fixture(autouse=True)
+def isolate_project_locator_environment(monkeypatch, tmp_path):
+    monkeypatch.delenv("WEBNOVEL_PROJECT_ROOT", raising=False)
+    monkeypatch.delenv("CLAUDE_PROJECT_DIR", raising=False)
+    monkeypatch.setenv("WEBNOVEL_CLAUDE_HOME", str(tmp_path / "empty-claude-home"))
+
+
 def test_resolve_project_root_prefers_cwd_project(tmp_path):
     _ensure_scripts_on_path()
 
     from project_locator import resolve_project_root
 
+    (tmp_path / ".git").mkdir(parents=True, exist_ok=True)
     project_root = tmp_path / "workspace"
     (project_root / ".webnovel").mkdir(parents=True, exist_ok=True)
     (project_root / ".webnovel" / "state.json").write_text("{}", encoding="utf-8")
@@ -91,6 +101,7 @@ def test_resolve_project_root_ignores_stale_pointer_and_fallbacks(tmp_path):
     from project_locator import resolve_project_root
 
     workspace = tmp_path / "workspace"
+    (workspace / ".git").mkdir(parents=True, exist_ok=True)
     (workspace / ".claude").mkdir(parents=True, exist_ok=True)
     # stale pointer
     (workspace / ".claude" / ".webnovel-current-project").write_text(
