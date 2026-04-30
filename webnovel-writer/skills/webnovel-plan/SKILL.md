@@ -51,20 +51,26 @@ export WORKSPACE_ROOT="${CLAUDE_PROJECT_DIR:-$PWD}"
 export SKILL_ROOT="${CLAUDE_PLUGIN_ROOT}/skills/webnovel-plan"
 export SCRIPTS_DIR="${CLAUDE_PLUGIN_ROOT}/scripts"
 export PROJECT_ROOT="$(python "${SCRIPTS_DIR}/webnovel.py" --project-root "${WORKSPACE_ROOT}" where)"
+
+python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" placeholder-scan --format text
 ```
 
 若本次规划会直接落到具体章节，还必须先刷新 Story System runtime 合同：
 
 ```bash
-# genre 从 state.json 的初始化配置快照读取；写前主链真源是 .story-system 合同树
+# genre 从 state.json 的初始化配置快照读取；写前主链真源是 .story-system 合同树。
+# 必须先从详细大纲解析真实 CHAPTER_GOAL，禁止传 {章纲目标} / 第N章章纲目标 这类占位文本。
 GENRE="$(python -X utf8 -c "import json,sys; s=json.load(open('${PROJECT_ROOT}/.webnovel/state.json',encoding='utf-8')); print(s.get('project',{}).get('genre',''))")"
 
 python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${WORKSPACE_ROOT}" \
-  story-system "{章纲目标}" --genre "${GENRE}" --chapter {chapter_num} --persist --emit-runtime-contracts --format both
+  story-system "${CHAPTER_GOAL}" --genre "${GENRE}" --chapter {chapter_num} --persist --emit-runtime-contracts --format both
 ```
 
 生成后必须把 `.story-system/MASTER_SETTING.json`、`.story-system/volumes/`、
 `.story-system/chapters/`、`.story-system/reviews/` 视为后续写作主链输入。
+规划开始/结束都运行 `placeholder-scan`；plan 阶段发现占位先警告并补齐相关文件，进入写章前不得保留当前章相关实体的 `[待...]` / `暂名` / `{占位}`。
+每卷规划完成后，只向 `大纲/总纲.md` 渐进追加下一卷概要与本卷新增/承接伏笔，不在 init 阶段预填 V2-V20 空表。
+规划完成后写回必须来自显式结构化文件 `大纲/第{volume_id}卷-总纲写回.json`，禁止从卷纲自由文本推断伏笔或开放环。
 
 ## 引用加载策略
 
@@ -341,6 +347,36 @@ cat "${SKILL_ROOT}/references/outlining/chapter-planning.md"
 - `BLOCKER=0`
 - 有节点时，相邻章节 `CEN -> CBN` 无明显逻辑冲突
 - 有节点时，每章必须覆盖节点不超过 `4` 个
+
+验证全部通过后，生成显式结构化写回文件：
+
+```json
+{
+  "next_volume_anchor": {
+    "volume": 2,
+    "volume_name": "下一卷卷名",
+    "core_conflict": "下一卷核心冲突",
+    "volume_end_climax": "下一卷卷末高潮"
+  },
+  "foreshadow_writeback": [
+    {"content": "本卷规划明确新增的伏笔", "buried_chapter": "第10章", "payoff_chapter": "", "level": "卷级"}
+  ],
+  "open_loop_writeback": [
+    {"content": "本卷结束后仍持续开放的问题", "buried_chapter": "", "payoff_chapter": "", "level": "持续开放环"}
+  ]
+}
+```
+
+只允许写入规划过程中显式列出的结构化伏笔/开放环；不要把自由文本里的暗示整理进去。随后执行最小总纲写回：
+
+```bash
+python "${SCRIPTS_DIR}/webnovel.py" --project-root "$PROJECT_ROOT" master-outline-sync \
+  --volume {volume_id} \
+  --writeback-file "大纲/第{volume_id}卷-总纲写回.json" \
+  --format text
+```
+
+该步骤只允许更新 `大纲/总纲.md` 的 V+1 卷名 / 核心冲突 / 卷末高潮与伏笔表，不得生成下一卷详细大纲、节拍表、时间线或章纲。
 
 更新状态：
 

@@ -54,12 +54,14 @@ export PROJECT_ROOT="$(python "${SCRIPTS_DIR}/webnovel.py" --project-root "${WOR
 GENRE="$(python -X utf8 -c "import json,sys; s=json.load(open('${PROJECT_ROOT}/.webnovel/state.json',encoding='utf-8')); print(s.get('project',{}).get('genre',''))")"
 
 python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${WORKSPACE_ROOT}" \
-  story-system "{chapter_goal}" --genre "${GENRE}" --chapter {chapter_num} --persist --emit-runtime-contracts --format both
+  story-system "${CHAPTER_GOAL}" --genre "${GENRE}" --chapter {chapter_num} --persist --emit-runtime-contracts --format both
 ```
 
 要求：
 - `PROJECT_ROOT` 必须包含 `.webnovel/state.json`
 - 任一关键目录不存在时立即阻断
+- `CHAPTER_GOAL` 必须来自详细大纲真实目标；若 `chapter_brief.meta.query` 仍是 `{章纲目标}` / `第N章章纲目标`，按系统问题记录。
+- 中高严重度 `ai_flavor` issue 会由 review-pipeline 回流到 `.story-system/anti_patterns.json`，作为后续写章避雷模式。
 
 ### Step 2：按需加载参考资料
 

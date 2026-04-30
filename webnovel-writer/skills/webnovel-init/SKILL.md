@@ -393,7 +393,9 @@ test "$(basename "${PROJECT_ROOT}")" = "${PROJECT_SLUG}"
 
 成功标准：
 - `state.json` 存在且关键字段不为空（title/genre/target_words/target_chapters）。
-- 设定集核心文件存在：`世界观.md`、`力量体系.md`、`主角卡.md`、`金手指设计.md`。
+- 设定集核心文件存在：`世界观.md`、`力量体系.md`、`主角卡.md`。
+- 单主角项目不生成 `主角组.md`；`heroine_config=无女主` 不生成 `女主卡.md`。
+- 默认不生成 `金手指设计.md`、`复合题材-融合逻辑.md`、`爽点规划.md` 或空的 `角色库/物品库/其他设定` 目录；这些信息以主角卡、世界观、卷纲为事实源。
 - `总纲.md` 已填核心主线与约束字段。
 - `idea_bank.json` 已写入且与最终选定方案一致。
 - `.story-system/MASTER_SETTING.json` 存在且 `route.primary_genre` 非空。
