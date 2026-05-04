@@ -78,11 +78,14 @@ class StateProjectionWriter:
             ):
                 progress["last_updated"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+        strand_applied = self._apply_strand_tracker(state, chapter, commit_payload)
+
         write_json(state_path, state)
         return {
             "applied": applied_count > 0 or chapter > 0,
             "writer": "state",
             "applied_count": applied_count,
+            "strand_tracker": strand_applied,
         }
 
     def _collect_state_deltas(self, commit_payload: dict) -> list[dict]:
@@ -212,6 +215,78 @@ class StateProjectionWriter:
             ):
                 ids.add(eid)
         return ids
+
+    def _apply_strand_tracker(self, state: dict, chapter: int, commit_payload: dict) -> bool:
+        strand = self._dominant_strand(commit_payload)
+        if chapter <= 0 or not strand:
+            return False
+
+        tracker = state.get("strand_tracker")
+        if not isinstance(tracker, dict):
+            tracker = {}
+            state["strand_tracker"] = tracker
+
+        valid = ("quest", "fire", "constellation")
+        for name in valid:
+            tracker.setdefault(f"last_{name}_chapter", 0)
+        tracker.setdefault("current_dominant", None)
+        tracker.setdefault("chapters_since_switch", 0)
+
+        history = tracker.get("history")
+        if not isinstance(history, list):
+            history = []
+
+        replaced_strands = set()
+        cleaned = []
+        for row in history:
+            if not isinstance(row, dict):
+                continue
+            row_chapter = self._safe_int(row.get("chapter"))
+            row_strand = str(row.get("dominant") or "").strip().lower()
+            if row_chapter <= 0 or row_strand not in valid:
+                continue
+            if row_chapter == chapter:
+                replaced_strands.add(row_strand)
+                continue
+            cleaned.append({"chapter": row_chapter, "dominant": row_strand})
+        cleaned.append({"chapter": chapter, "dominant": strand})
+        cleaned.sort(key=lambda row: row["chapter"])
+        if len(cleaned) > 50:
+            cleaned = cleaned[-50:]
+        tracker["history"] = cleaned
+
+        for name in valid:
+            history_last = max((row["chapter"] for row in cleaned if row["dominant"] == name), default=0)
+            existing_last = 0 if name in replaced_strands else self._safe_int(tracker.get(f"last_{name}_chapter"))
+            tracker[f"last_{name}_chapter"] = max(
+                existing_last,
+                history_last,
+            )
+
+        latest = cleaned[-1]
+        current = latest["dominant"]
+        tracker["current_dominant"] = current
+        streak = 0
+        for row in reversed(cleaned):
+            if row["dominant"] != current:
+                break
+            streak += 1
+        tracker["chapters_since_switch"] = streak
+        return True
+
+    def _dominant_strand(self, commit_payload: dict) -> str:
+        chapter_meta = commit_payload.get("chapter_meta") or {}
+        if not isinstance(chapter_meta, dict):
+            chapter_meta = {}
+        raw = (
+            commit_payload.get("dominant_strand")
+            or commit_payload.get("strand")
+            or chapter_meta.get("dominant_strand")
+            or chapter_meta.get("strand")
+            or ""
+        )
+        strand = str(raw or "").strip().lower()
+        return strand if strand in {"quest", "fire", "constellation"} else ""
 
     def _project_total_words(self, chapter_status: dict) -> int:
         total = 0

@@ -129,6 +129,66 @@ def test_state_projection_writer_derives_delta_from_power_breakthrough_event(tmp
     assert payload["entity_state"]["xiaoyan"]["realm"] == "斗师"
 
 
+def test_state_projection_writer_updates_strand_tracker(tmp_path):
+    (tmp_path / ".webnovel").mkdir(parents=True, exist_ok=True)
+    (tmp_path / ".webnovel" / "state.json").write_text("{}", encoding="utf-8")
+    writer = StateProjectionWriter(tmp_path)
+
+    writer.apply(
+        {
+            "meta": {"status": "accepted", "chapter": 3},
+            "state_deltas": [],
+            "accepted_events": [],
+            "dominant_strand": "quest",
+        }
+    )
+    writer.apply(
+        {
+            "meta": {"status": "accepted", "chapter": 4},
+            "state_deltas": [],
+            "accepted_events": [],
+            "dominant_strand": "quest",
+        }
+    )
+
+    payload = json.loads((tmp_path / ".webnovel" / "state.json").read_text(encoding="utf-8"))
+    tracker = payload["strand_tracker"]
+    assert tracker["current_dominant"] == "quest"
+    assert tracker["last_quest_chapter"] == 4
+    assert tracker["chapters_since_switch"] == 2
+    assert len(tracker["history"]) == 2
+
+
+def test_state_projection_writer_reapplying_chapter_replaces_strand(tmp_path):
+    (tmp_path / ".webnovel").mkdir(parents=True, exist_ok=True)
+    (tmp_path / ".webnovel" / "state.json").write_text("{}", encoding="utf-8")
+    writer = StateProjectionWriter(tmp_path)
+
+    writer.apply(
+        {
+            "meta": {"status": "accepted", "chapter": 3},
+            "state_deltas": [],
+            "accepted_events": [],
+            "dominant_strand": "quest",
+        }
+    )
+    writer.apply(
+        {
+            "meta": {"status": "accepted", "chapter": 3},
+            "state_deltas": [],
+            "accepted_events": [],
+            "dominant_strand": "fire",
+        }
+    )
+
+    payload = json.loads((tmp_path / ".webnovel" / "state.json").read_text(encoding="utf-8"))
+    tracker = payload["strand_tracker"]
+    assert tracker["current_dominant"] == "fire"
+    assert tracker["last_quest_chapter"] == 0
+    assert tracker["last_fire_chapter"] == 3
+    assert tracker["history"] == [{"chapter": 3, "dominant": "fire"}]
+
+
 def test_accepted_commit_updates_state_json_end_to_end(tmp_path):
     (tmp_path / ".webnovel").mkdir(parents=True, exist_ok=True)
     (tmp_path / ".webnovel" / "state.json").write_text("{}", encoding="utf-8")
@@ -293,6 +353,81 @@ def test_index_projection_writer_derives_artifact_entity_from_event(tmp_path):
     assert result["applied"] is True
     assert entity["canonical_name"] == "黑戒"
     assert entity["current_json"]["holder"] == "xiaoyan"
+
+
+def test_accepted_commit_writes_chapter_index_tables(tmp_path):
+    cfg = DataModulesConfig.from_project_root(tmp_path)
+    cfg.ensure_dirs()
+    (tmp_path / ".webnovel" / "state.json").write_text("{}", encoding="utf-8")
+    chapters_dir = tmp_path / "正文"
+    chapters_dir.mkdir(parents=True, exist_ok=True)
+    (chapters_dir / "第0003章.md").write_text("第三章正文内容", encoding="utf-8")
+
+    service = ChapterCommitService(tmp_path)
+    payload = service.build_commit(
+        chapter=3,
+        review_result={"blocking_count": 0},
+        fulfillment_result={"planned_nodes": [], "covered_nodes": [], "missed_nodes": [], "extra_nodes": []},
+        disambiguation_result={"pending": []},
+        extraction_result={
+            "summary_text": "本章摘要",
+            "state_deltas": [{"entity_id": "xiaoyan", "field": "realm", "old": "斗者", "new": "斗师"}],
+            "entity_deltas": [],
+            "entities_appeared": [{"id": "xiaoyan", "mentions": ["萧炎"], "confidence": 0.95}],
+            "scenes": [
+                {
+                    "index": 1,
+                    "start_line": 1,
+                    "end_line": 12,
+                    "location": "山门",
+                    "summary": "萧炎完成突破",
+                    "characters": ["xiaoyan"],
+                }
+            ],
+            "accepted_events": [],
+        },
+    )
+
+    result = service.apply_projections(payload)
+    manager = IndexManager(cfg)
+
+    assert result["projection_status"]["index"] == "done"
+    assert manager.get_chapter(3)["summary"] == "本章摘要"
+    assert manager.get_chapter_appearances(3)[0]["entity_id"] == "xiaoyan"
+    assert manager.get_scenes(3)[0]["location"] == "山门"
+    changes = manager.get_chapter_state_changes(3)
+    assert len(changes) == 1
+    assert changes[0]["entity_id"] == "xiaoyan"
+    assert changes[0]["field"] == "realm"
+
+
+def test_index_projection_writer_records_state_change_from_event(tmp_path):
+    cfg = DataModulesConfig.from_project_root(tmp_path)
+    cfg.ensure_dirs()
+    writer = IndexProjectionWriter(tmp_path)
+
+    result = writer.apply(
+        {
+            "meta": {"status": "accepted", "chapter": 3},
+            "state_deltas": [],
+            "entity_deltas": [],
+            "accepted_events": [
+                {
+                    "event_id": "evt-001",
+                    "chapter": 3,
+                    "event_type": "character_state_changed",
+                    "subject": "xiaoyan",
+                    "payload": {"field": "mood", "old": "躁动", "new": "冷静"},
+                }
+            ],
+        }
+    )
+
+    changes = IndexManager(cfg).get_chapter_state_changes(3)
+    assert result["state_changes"] == 1
+    assert len(changes) == 1
+    assert changes[0]["entity_id"] == "xiaoyan"
+    assert changes[0]["field"] == "mood"
 
 
 def test_summary_projection_writer_writes_summary_markdown(tmp_path):

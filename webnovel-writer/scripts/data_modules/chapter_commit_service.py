@@ -65,6 +65,10 @@ class ChapterCommitService:
             "accepted_events": extraction_result.get("accepted_events", []),
             "state_deltas": extraction_result.get("state_deltas", []),
             "entity_deltas": extraction_result.get("entity_deltas", []),
+            "entities_appeared": extraction_result.get("entities_appeared", []),
+            "scenes": extraction_result.get("scenes", []),
+            "chapter_meta": extraction_result.get("chapter_meta", {}),
+            "dominant_strand": extraction_result.get("dominant_strand", ""),
             "summary_text": extraction_result.get("summary_text", ""),
             "projection_status": {
                 "state": "pending",

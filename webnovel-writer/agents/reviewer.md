@@ -19,6 +19,8 @@ model: inherit
 - `Grep`：在正文中搜索关键词
 - `Bash`：调用记忆模块查询
 
+若项目存在 `{project_root}/P20_WRITING_DNA.md`、`{project_root}/WRITING_DNA.md`、`{project_root}/.claude/rules/P20_*.md`，必须先读取并把其中的私有文风/反 AI 味规则纳入检查；输出 issue 时不暴露文件路径。
+
 ```bash
 # 查询角色当前状态
 python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" state get-entity --id "{entity_id}"
@@ -84,6 +86,7 @@ python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" ind
 - 是否存在连续同构句（≥3 句主谓宾结构一致）
 - 是否每段都以总结句收尾（"他终于明白了""由此可见"）
 - 是否存在同一信息用不同句式重复说 2-3 遍
+- 是否存在比较状语或抽象判断先行，随后用正文补解释，导致句子像在替读者下结论
 - severity: `high`
 
 #### 6.3 叙事层

@@ -26,6 +26,7 @@ class EventProjectionRouter:
         writers: Set[str] = set()
         if str((commit_payload.get("meta") or {}).get("status") or "") == "accepted":
             writers.add("state")
+            writers.add("index")
         if commit_payload.get("entity_deltas"):
             writers.add("index")
         if str(commit_payload.get("summary_text") or "").strip():
