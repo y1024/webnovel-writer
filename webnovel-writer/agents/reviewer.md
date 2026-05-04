@@ -19,7 +19,7 @@ model: inherit
 - `Grep`：在正文中搜索关键词
 - `Bash`：调用记忆模块查询
 
-若项目存在 `{project_root}/P20_WRITING_DNA.md`、`{project_root}/WRITING_DNA.md`、`{project_root}/.claude/rules/P20_*.md`，必须先读取并把其中的私有文风/反 AI 味规则纳入检查；输出 issue 时不暴露文件路径。
+若用户明确提供或指定项目级文风/反 AI 味规则文件，必须先读取并把其中的私有规则纳入检查；输出 issue 时不暴露文件路径。
 
 ```bash
 # 查询角色当前状态

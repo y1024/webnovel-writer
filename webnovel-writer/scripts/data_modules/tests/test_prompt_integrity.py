@@ -326,6 +326,14 @@ def test_context_agent_loads_fixed_guides_and_outputs_writer_brief():
     assert "Context Contract" not in text
 
 
+def test_agents_do_not_name_nonexistent_writing_dna_files():
+    for filename in ("context-agent.md", "reviewer.md"):
+        text = (AGENTS_DIR / filename).read_text(encoding="utf-8")
+        assert "P20_WRITING_DNA" not in text
+        assert "WRITING_DNA.md" not in text
+        assert ".claude/rules/P20_" not in text
+
+
 def test_data_agent_is_described_as_extraction_only_not_direct_write_mainline():
     text = (AGENTS_DIR / "data-agent.md").read_text(encoding="utf-8")
     assert "chapter-commit" in text

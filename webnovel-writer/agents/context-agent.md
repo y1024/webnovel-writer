@@ -75,7 +75,7 @@ python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "{project_root}" extr
 1. `load-context --chapter {NNNN}` 获取基础包
 2. `Read` 章纲原文（load-context 的 outline 可能截断）
 3. 确定卷号（优先 runtime contracts / latest commit；必要时兼容读取 state.json 投影）
-4. 读取项目级写作 DNA（若存在）：`{project_root}/P20_WRITING_DNA.md`、`{project_root}/WRITING_DNA.md`、`{project_root}/.claude/rules/P20_*.md`。只消费规则，不在任务书暴露文件名。
+4. 若用户明确提供额外的项目级文风/反 AI 味规则文件，读取并只消费规则，不在任务书暴露文件名。
 
 ### B：按需深查（只查基础包不足的）
 
@@ -94,7 +94,7 @@ python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "{project_root}" extr
 ### D：组装
 
 1. 推断：动机 = 目标+处境+钩子压力；情绪底色 = 上章结尾+走向；可用能力 = 境界+设定禁用
-2. 从 `story_contracts` 取 `reasoning`（style_priority/pacing_strategy）+ `anti_patterns`，并合并项目级写作 DNA
+2. 从 `story_contracts` 取 `reasoning`（style_priority/pacing_strategy）+ `anti_patterns`，并合并用户明确提供的项目级文风规则
 3. 组装五段任务书
 4. 红线校验
 
